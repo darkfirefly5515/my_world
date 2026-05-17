@@ -1,0 +1,364 @@
+% =====================================================================
+%  PCRN: A Pocket-derived Co-occurrence Residue Network for
+%        Analyzing Protein Pocket Dynamics
+%
+%  Self-contained Overleaf project. Just upload this file (and the
+%  references.bib in the same folder) to Overleaf and click "Recompile".
+%  Engine: pdfLaTeX. Bibliography: BibTeX (run pdflatex -> bibtex ->
+%  pdflatex -> pdflatex, or just press Recompile twice on Overleaf).
+% =====================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% --------- Encoding & fonts ---------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% --------- Layout ---------
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --------- Math & symbols ---------
+\usepackage{amsmath,amssymb}
+
+% --------- Graphics & color ---------
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% --------- Hyperlinks ---------
+\usepackage[colorlinks=true,
+            linkcolor=blue!60!black,
+            citecolor=blue!60!black,
+            urlcolor=blue!60!black]{hyperref}
+
+% --------- Section formatting ---------
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+
+% --------- Better tables (if needed later) ---------
+\usepackage{booktabs}
+
+% --------- Bibliography style ---------
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
+
+% =====================================================================
+%   Title block
+% =====================================================================
+\title{\textbf{PCRN: A Pocket-derived Co-occurrence Residue Network for
+       Analyzing Protein Pocket Dynamics}}
+
+\author{Anonymous Author(s) \\ \small Affiliation \\
+        \small \texttt{email@institution.edu}}
+
+\date{}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\maketitle
+
+% ---------------------------------------------------------------------
+%   Abstract
+% ---------------------------------------------------------------------
+\begin{abstract}
+\noindent
+Protein pockets are inherently dynamic structures whose stability,
+merging, splitting, and allosteric coupling underpin protein function
+and drug binding. Existing residue-level networks predominantly encode
+physical proximity or non-covalent interactions, capturing structural
+contacts but overlooking the functional co-membership of residues
+within transient pockets. We introduce \textbf{PCRN
+(Pocket-derived Co-occurrence Residue Network)}, in which an edge
+between two residues is weighted by how frequently they co-occur as
+members of the same pocket across a conformational ensemble, with node
+weights reflecting per-residue pocket participation frequency. The
+construction is alignment-free, builds directly on per-frame pocket
+detections from \textsc{fpocket}, and shifts the network's semantic
+level from physical contact to functional co-membership. We show that
+PCRN exposes pocket-relevant features that contact-based networks
+miss: tightly co-occurring residue cliques mark stable pocket cores,
+low-weight bridges identify hinges where pockets merge or split, and
+community structure tracks the temporal organization of pocket
+regions. PCRN is computationally lightweight, complementary to
+existing residue interaction networks, and offers a generalizable
+lens for studying dynamic pocket behavior.
+
+\medskip
+\noindent\textbf{Keywords:} protein pocket dynamics, residue
+co-occurrence network, alignment-free analysis, molecular dynamics,
+visual analytics, allosteric communication.
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+% =====================================================================
+
+\subsection{The Importance of Protein Pockets}
+Protein pockets --- also referred to as cavities or binding sites ---
+are geometrically concave regions formed by specific residues on the
+protein surface or in its interior, and they play central roles in
+ligand recognition, catalysis, and allosteric regulation
+\citep{stank2016protein,krone2016visual}. In structural biology and
+drug design, the accurate localization and characterization of pockets
+serve as a critical starting point for hit discovery, virtual
+screening, and mechanistic interpretation
+\citep{meller2025cryptic,krivak2024comparative}. Increasing evidence,
+however, indicates that many functionally relevant pockets ---
+including cryptic pockets, allosteric sites, and transient pockets
+--- are not visible in static crystal structures and can only be
+revealed by examining the dynamic conformational behavior of the
+protein \citep{stank2016protein,meller2025cryptic}. Consequently,
+systematic analysis of pockets and their dynamics has become a central
+topic in modern structure-based drug discovery.
+
+\subsection{The Development of Static Pocket Detection Algorithms}
+Pocket detection methods built on static structures have been
+developed for decades. \citet{krone2016visual} classified the
+mainstream approaches into four categories: grid-based,
+Voronoi-based (e.g., \textsc{fpocket}), surface-based, and
+probe-based methods. Tools such as $\text{EPOS}_{\text{BP}}$
+\citep{eposbp_website} further enable high-throughput detection of
+pocket ensembles on protein surfaces. Building on these algorithms,
+a variety of pocket characterization and similarity metrics have been
+proposed \citep{eguida2022estimating,weill2010alignment} to support
+cross-protein comparison. The systematic evaluation of pocket
+prediction methods by \citet{krivak2024comparative} shows that
+geometry-based and machine-learning-based methods each have their
+strengths, but both rely on a static structure as input.
+
+\subsection{The Limitations of Static Pocket Detection}
+Despite the substantial progress made in static pocket detection, its
+fundamental limitation lies in \emph{neglecting the intrinsic
+dynamics of protein conformations}. Real proteins undergo continuous
+thermal motion, during which pocket shape, volume, accessibility, and
+residue composition all vary over time. Detection based on a single
+crystal structure (i)~\textbf{misses cryptic pockets} that appear
+only in specific dynamic conformations \citep{meller2025cryptic};
+(ii)~cannot characterize the \textbf{transient expansion,
+contraction, merging, and splitting} of pockets
+\citep{stank2016protein,lindow2013exploring}; and (iii)~struggles to
+distinguish \textbf{functionally persistent pockets} from
+\textbf{transient noise-like cavities} \citep{parulek2013visual}.
+These limitations directly hinder the application of static pocket
+analysis to allosteric regulation studies, drug repurposing, and the
+targeting of ``undruggable'' proteins.
+
+\subsection{The Importance of Dynamic Pocket Analysis}
+With advances in hardware acceleration and enhanced sampling
+techniques for molecular dynamics (MD) simulations, researchers can
+now observe pocket evolution in conformational space at atomic
+resolution \citep{stank2016protein,vant2024complex}. Dynamic pocket
+analysis can reveal: the opening and closing mechanisms of cryptic
+pockets \citep{meller2025cryptic}, transient accessibility along
+ligand entry/exit channels \citep{lindow2013exploring}, and inter-site
+allosteric communication networks
+\citep{cuendet2021centrality,sheikamamuddy2021allosteric,
+lasala2017pocket}. \citet{stank2016protein} systematically reviewed
+multiple dimensions of pocket dynamics characterization --- shape,
+volume, stability, and inter-pocket transitions --- and emphasized
+their irreplaceable value in drug design. Recent reviews on cryptic
+pockets further indicate that pocket discovery from a dynamic
+perspective has become a key avenue for expanding the druggable
+proteome \citep{meller2025cryptic}.
+
+\subsection{Limitations of Alignment-Based Approaches for Dynamic
+            Pocket Analysis}
+In existing dynamic pocket analysis frameworks,
+\emph{structural alignment} is an implicit prerequisite for most
+methods: all frames of an MD trajectory must first be superimposed
+onto a reference structure, and then pocket density, volume, or
+shape can be aggregated and compared in a unified coordinate system
+\citep{lindow2013exploring,parulek2013visual,zhan2020spatiotemporal}.
+This paradigm suffers from several issues:
+\begin{enumerate}
+  \item \textbf{Reference selection is subjective} --- using
+        different reference frames or different reference residue
+        sets can substantially alter the resulting pocket density
+        map \citep{krone2016visual}.
+  \item \textbf{Alignment is unreliable in flexible regions} ---
+        the motion of flexible loops and surface residues is often
+        ``averaged out'' by global alignment, masking the true local
+        pocket dynamics \citep{eguida2022estimating}.
+  \item \textbf{Coupling between global and local motions} ---
+        global translation and rotation of the protein cannot be
+        cleanly separated from local pocket variation through
+        alignment, and the pocket dynamics signal becomes
+        contaminated by global pseudo-signals
+        \citep{vant2024complex}.
+  \item \textbf{Cross-protein comparison is difficult} --- when
+        comparing pockets from different proteins or different
+        mutants of the same protein, global alignment often fails
+        because of differences in fold
+        \citep{eguida2022estimating,weill2010alignment}.
+\end{enumerate}
+
+\subsection{The Advantages of Alignment-Free Approaches}
+To circumvent the issues above, alignment-free approaches to pocket
+analysis have attracted growing attention. \citet{weill2010alignment}
+proposed an early ultra-high-throughput pocket comparison method
+based on pharmacophoric fingerprints, demonstrating that
+pocket-to-pocket similarity can be computed in milliseconds without
+any structural alignment. In a 2022 review,
+\citet{eguida2022estimating} further pointed out that alignment-free
+methods offer significant advantages in large-scale pocket
+comparison, cross-family comparison, and machine-learning-oriented
+feature construction. The core advantages of alignment-free methods
+are: (i)~inherent rotational and translational invariance, free from
+reference-frame bias; (ii)~massive parallelizability, suitable for
+trajectories of tens of thousands of frames; and (iii)~clear
+biological semantics --- descriptions based on residue identity or
+topological invariants naturally preserve cross-frame correspondence.
+These advantages are particularly relevant to the cross-frame pocket
+analysis on a single protein studied in this paper, because residue
+numbering remains constant throughout the trajectory, making
+alignment-free analysis essentially ``free of charge.''
+
+\subsection{The Need for Visual Analytics on Long-Timescale MD Data}
+As MD simulation timescales extend from nanoseconds into the
+microsecond and even millisecond regime, a single trajectory may
+contain tens of thousands to millions of frames covering hundreds
+of thousands of atoms --- a high-dimensional spatiotemporal dataset
+\citep{vant2024complex}. Numerical statistics alone (e.g., RMSD,
+RMSF, pocket-volume time series) cannot reveal the complex events
+embedded in pocket dynamics --- opening, closing, merging,
+splitting, and allosteric coupling. \emph{Visual analytics}, by
+combining automated algorithms with human perception and cognition,
+provides a multi-layered, interactive, and exploratory path to
+insight \citep{krone2016visual,parulek2013visual,vant2024complex}.
+Both the state-of-the-art report by \citet{krone2016visual} and the
+2024 review of MD trajectory visualization by
+\citet{vant2024complex} emphasize that dedicated visual analytics
+systems for dynamic pockets are a key bridge between raw MD data and
+biological interpretation. The work presented in this paper is
+motivated by this need: we propose a residue co-occurrence
+network--based approach to dynamic pocket analysis and visualization.
+
+% =====================================================================
+\section{Related Work}
+% =====================================================================
+
+\subsection{Geometric and Topological Visual Analytics for
+            Dynamic Pockets}
+Early work on dynamic pocket visualization was primarily based on
+geometric and topological representations.
+\citet{lindow2013exploring} proposed a preprocessing pipeline based
+on Voronoi diagrams and van der Waals spheres, coupled with an
+interactive visualization interface that allows users to dynamically
+select and observe cavity evolution along an MD trajectory.
+\citet{parulek2013visual} proposed a pocket extraction method based
+on implicit-function sampling and graph algorithms, used 3D graphs
+and residue-based attributes to characterize pockets, and applied
+the method to MD simulations of Proteinase~3.
+\citet{krone2014visual}'s IEEE PacificVis 2014 work further proposed
+a multiple-coordinated-view visual analytics system targeting dynamic
+protein cavities and binding sites. The 2016 STAR by
+\citet{krone2016visual} provided a comprehensive survey of the field
+and proposed the four-class taxonomy of pocket detection methods, and
+remains one of the most influential reviews in this area.
+
+More refined visual analytics systems for dynamic pockets have
+appeared in recent years: the spatiotemporal multiscale framework of
+\citet{zhan2020spatiotemporal} presents pocket evolution at multiple
+semantic levels; PNMAVis \citep{wang2022pnmavis} couples normal mode
+analysis (NMA) with pocket dynamics to provide mode-based
+interpretations of pocket variation; VAPPD \citep{vappd2022} proposes
+a pocket shape representation that integrates topological features,
+together with a high-dimensional similarity metric and a multi-view
+analytical system; and the more recent PocketSCP \citep{pocketscp2025}
+exploits the spatiotemporal topological properties of lining residue
+atoms for visualizing and analyzing dynamic pockets. At the tool
+level, D3Pockets \citep{d3pockets} provides a systematic web service
+for pocket dynamics, while works such as
+\textit{Visual Analysis of Large-Scale Protein--Ligand Interaction
+Data} \citep{vis_largescale_pli} contribute complementary
+perspectives from the angle of large-scale protein--ligand
+interaction visualization.
+
+\subsection{Residue Interaction Networks (RINs) and Their Use in MD}
+Representing a protein structure as a residue interaction network
+(RIN) has become an important paradigm for analyzing protein function
+and dynamics \citep{vishveshwara2009modeling}. In this framework,
+nodes represent residues and edges represent residue--residue
+interactions in some defined sense, compressing high-dimensional
+structural information into a graph that is amenable to network
+analysis. Centrality measures computed on RINs (e.g., degree,
+betweenness, closeness) have been widely used to identify
+functionally important residues and allosteric hubs
+\citep{cuendet2021centrality}.
+
+As MD-derived data have become more abundant, researchers have
+extended RINs to time-resolved settings.
+\citet{rin_clustering_ensembles} extracted ensembles of RINs along
+MD trajectories and clustered them, revealing distinct network
+patterns that correspond to different conformational families. A
+recent review by \citet{bernetti2024probing} systematically
+summarizes methodological advances that combine MD with network
+analysis for probing allosteric communication.
+\citet{sheikamamuddy2021allosteric}, working on Falcipain~2, employed
+dynamic RIN centrality analysis to identify allosteric pockets and
+network hubs associated with drug-resistance mutations, providing a
+representative example of how RINs can serve dynamic pocket analysis.
+
+\subsection{Pocket-to-Pocket Communication and ``Pocket Crosstalk''
+            Networks}
+A few recent studies have started to construct networks at a higher
+abstraction level than residues. \citet{lasala2017pocket} proposed
+\emph{pocket crosstalk} analysis, in which the temporal exchange of
+atoms between pockets along an MD trajectory is treated as the edge
+of an allosteric communication network. By taking pockets as nodes
+and inter-pocket atom flow as edges, this work complements
+traditional residue-level networks at a higher hierarchical level
+and reveals inter-pocket allosteric coupling patterns that had been
+difficult to capture.
+
+\subsection{Limitations of Existing Work and the Niche for This
+            Paper}
+The literature above can be seen as two relatively independent
+threads: one focusing on \emph{geometry- and topology-driven dynamic
+pocket visualization} (e.g., VAPPD, PocketSCP, the spatiotemporal
+multiscale framework)
+\citep{zhan2020spatiotemporal,vappd2022,pocketscp2025};
+and the other focusing on \emph{network-driven residue analysis}
+\citep{vishveshwara2009modeling,cuendet2021centrality,
+rin_clustering_ensembles,bernetti2024probing}. However:
+
+\begin{itemize}
+  \item Existing residue interaction networks are largely built on
+        physical distance or non-covalent interactions and lack a
+        network representation at the level of \emph{functional
+        co-membership};
+  \item Existing dynamic pocket visualization approaches are mainly
+        geometric or topological, and \emph{do not fully exploit the
+        strengths of network analysis} for revealing pocket
+        stability, merging/splitting events, and allosteric
+        communication;
+  \item Cross-frame pocket tracking has long depended on structural
+        alignment, and the \emph{alignment-free paradigm has not yet
+        been systematically adopted} in dynamic pocket analysis
+        \citep{eguida2022estimating,weill2010alignment}.
+\end{itemize}
+
+To address these gaps, we propose the \textbf{Pocket-derived
+Co-occurrence Residue Network (PCRN)}: treating the pockets detected
+per-frame by \textsc{fpocket} as ``functional events,'' we use the
+co-occurrence frequency of residue pairs within the same pocket as
+edge weights and the per-residue pocket participation frequency as
+node weights, thereby constructing a fully alignment-free,
+pocket-oriented residue-level network. Combined with sliding time
+windows and community detection, PCRN can characterize the stable
+cores and dynamic edges of pockets, the merging and splitting events
+along the trajectory, and the allosteric communication paths between
+pockets, and presents these dynamic behaviors to domain experts
+through a multi-view visual analytics system in an interpretable
+manner.
+
+% =====================================================================
+\bibliography{references}
+% =====================================================================
+
+\end{document}
