@@ -157,7 +157,7 @@ analysis can reveal: the opening and closing mechanisms of cryptic
 pockets \citep{meller2025cryptic}, transient accessibility along
 ligand entry/exit channels \citep{lindow2013exploring}, and inter-site
 allosteric communication networks
-\citep{cuendet2021centrality,sheikamamuddy2021allosteric,
+\citep{centrality2021highlight,sheikamamuddy2021allosteric,
 lasala2017pocket}. \citet{stank2016protein} systematically reviewed
 multiple dimensions of pocket dynamics characterization --- shape,
 volume, stability, and inter-pocket transitions --- and emphasized
@@ -264,18 +264,18 @@ remains one of the most influential reviews in this area.
 More refined visual analytics systems for dynamic pockets have
 appeared in recent years: the spatiotemporal multiscale framework of
 \citet{zhan2020spatiotemporal} presents pocket evolution at multiple
-semantic levels; PNMAVis \citep{wang2022pnmavis} couples normal mode
+semantic levels; PNMAVis \citep{guo2022pnmavis} couples normal mode
 analysis (NMA) with pocket dynamics to provide mode-based
-interpretations of pocket variation; VAPPD \citep{vappd2022} proposes
+interpretations of pocket variation; VAPPD \citep{guo2022vappd} proposes
 a pocket shape representation that integrates topological features,
 together with a high-dimensional similarity metric and a multi-view
-analytical system; and the more recent PocketSCP \citep{pocketscp2025}
+analytical system; and the more recent PocketSCP \citep{guo2025pocketscp}
 exploits the spatiotemporal topological properties of lining residue
 atoms for visualizing and analyzing dynamic pockets. At the tool
-level, D3Pockets \citep{d3pockets} provides a systematic web service
+level, D3Pockets \citep{xu2019d3pockets} provides a systematic web service
 for pocket dynamics, while works such as
 \textit{Visual Analysis of Large-Scale Protein--Ligand Interaction
-Data} \citep{vis_largescale_pli} contribute complementary
+Data} \citep{schatz2021visual} contribute complementary
 perspectives from the angle of large-scale protein--ligand
 interaction visualization.
 
@@ -289,7 +289,7 @@ structural information into a graph that is amenable to network
 analysis. Centrality measures computed on RINs (e.g., degree,
 betweenness, closeness) have been widely used to identify
 functionally important residues and allosteric hubs
-\citep{cuendet2021centrality}.
+\citep{centrality2021highlight}.
 
 As MD-derived data have become more abundant, researchers have
 extended RINs to time-resolved settings.
@@ -322,9 +322,9 @@ The literature above can be seen as two relatively independent
 threads: one focusing on \emph{geometry- and topology-driven dynamic
 pocket visualization} (e.g., VAPPD, PocketSCP, the spatiotemporal
 multiscale framework)
-\citep{zhan2020spatiotemporal,vappd2022,pocketscp2025};
+\citep{zhan2020spatiotemporal,guo2022vappd,guo2025pocketscp};
 and the other focusing on \emph{network-driven residue analysis}
-\citep{vishveshwara2009modeling,cuendet2021centrality,
+\citep{vishveshwara2009modeling,centrality2021highlight,
 rin_clustering_ensembles,bernetti2024probing}. However:
 
 \begin{itemize}
